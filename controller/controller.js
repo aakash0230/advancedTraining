@@ -1,8 +1,15 @@
 const connection = require("../connection/connection")
 const reader = require('xlsx')
+const bcrypt = require('bcrypt');
+const { fetchData, addData } = require("../repository/repository")
+const env = require("dotenv")
+const jwt = require("jsonwebtoken")
+
+env.config()
+console.log(process.env.JWT_SECRET)
 
 class dataController {
-    async getData (req, res){
+    async postExcelData (req, res){
         try{
             console.log("inside get data")
             // let excelData = (req.file) ? req.file.filename : null
@@ -42,7 +49,6 @@ class dataController {
 
             }
             )
-            // console.log(data)
             res.send("Bhai upload ho gaya")
         }
         catch(err){
@@ -50,6 +56,57 @@ class dataController {
             res.json(err)
         }
     }
-}
 
+    async singIn (req, res){
+        try{
+            const { email, employeePassword } = req.body
+            const row = await fetchData(email)
+            console.log(row)
+            if(row.length > 0){
+                const matchPassword = bcrypt.compareSync(employeePassword, row[0].employeePassword);
+                if(matchPassword){
+                    res.status(200).json({
+                        success : true,
+                        message : "Logged in Succesfully"
+                    })
+                }
+                else{
+                    res.status(404).json({
+                        success : false,
+                        message : "Wrong username or password"
+                    })
+                }
+            }
+            else{
+                res.status(404).json({
+                    success : false,
+                    message : "Wrong username or password"
+                })
+            }
+        }
+        catch(err){
+            console.log(err)
+            res.send(err)
+        }
+    }
+
+    async singUp (req, res){
+        try{
+            const { employeeName, email, employeePassword, employeeRole } = req.body;
+            const hash_password = bcrypt.hashSync(employeePassword, 10);
+            const token = jwt.sign({email : email}, process.env.JWT_SECRET, {expiresIn : '1h'});
+            const row = await addData(employeeName, email, hash_password, employeeRole)
+            res.status(200).json({
+                success : true,
+                token : token,
+                data : row
+            })
+        }
+        catch(err){
+            console.log(err)
+            res.send(err)
+        }
+    }
+
+}
 module.exports = new dataController();

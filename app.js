@@ -1,9 +1,9 @@
 const express = require("express");
-const bodyParser = require("body-parser");
 const router = require("./routes/routes");
-const reader = require('xlsx')
+const env = require("dotenv")
 
 
+env.config();
 const app = express()
 // app.use(bodyParser.json())
 app.use(express.json())
@@ -11,6 +11,7 @@ app.use(express.json())
 app.use(router);
 
 console.log("Aakash Pandey")
+console.log(process.env.JWT_SECRET)
 
 // let data = []
 
